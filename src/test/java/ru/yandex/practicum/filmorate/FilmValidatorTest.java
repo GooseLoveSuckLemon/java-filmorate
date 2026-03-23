@@ -3,8 +3,8 @@ package ru.yandex.practicum.filmorate;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import ru.yandex.practicum.filmorate.backend.Validation.FilmValidator;
-import ru.yandex.practicum.filmorate.backend.Validation.ValidationException;
+import ru.yandex.practicum.filmorate.Validation.FilmValidator;
+import ru.yandex.practicum.filmorate.Validation.Exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.time.LocalDate;
