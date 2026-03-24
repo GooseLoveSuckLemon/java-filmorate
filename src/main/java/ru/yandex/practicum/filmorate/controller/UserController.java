@@ -6,7 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.service.UserService;
-import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.model.User.User;
 import ru.yandex.practicum.filmorate.storage.User.UserStorage;
 
 import java.util.List;
@@ -69,7 +69,21 @@ public class UserController {
     @PutMapping("/{id}/friends/{friendId}")
     public ResponseEntity<Void> addFriend(@PathVariable int id, @PathVariable Integer friendId) {
         log.info("Добавление друга: пользователь с id {} добавляет пользователя с id {}", id, friendId);
-        userService.addFriend(id, friendId);
+        userService.sendFriendRequest(id, friendId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/{id}/friends/{friendId}/accept")
+    public ResponseEntity<Void> passedFriend(@PathVariable int id, @PathVariable int friendId) {
+        log.info("Подтверждение заявки в друзья: пользователь {} подтверждает заявку от {}", id, friendId);
+        userService.passedFriend(id, friendId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/{id}/friends/{friendId}/reject")
+    public ResponseEntity<Void> rejectFriendRequest(@PathVariable int id, @PathVariable int friendId) {
+        log.info("Отклонение заявки в друзья: пользователь {} отклоняет заявку от {}", id, friendId);
+        userService.rejectFriendRequest(id, friendId);
         return ResponseEntity.ok().build();
     }
 
@@ -92,5 +106,12 @@ public class UserController {
         log.info("Получение общих друзей пользователей id {} и id {}", id, otherId);
         List<User> commonFriends = userService.getCommonFriends(id, otherId);
         return ResponseEntity.ok(commonFriends);
+    }
+
+    @GetMapping("/{id}/friends/requests")
+    public ResponseEntity<List<User>> getFriendRequests(@PathVariable int id) {
+        log.info("Получение входящих заявок в друзья для пользователя {}", id);
+        List<User> requests = userService.getFriendRequests(id);
+        return ResponseEntity.ok(requests);
     }
 }

@@ -4,7 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.Validation.Exception.NotFoundException;
 import ru.yandex.practicum.filmorate.Validation.UserValidator;
-import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.model.User.User;
 import java.util.*;
 
 @Component

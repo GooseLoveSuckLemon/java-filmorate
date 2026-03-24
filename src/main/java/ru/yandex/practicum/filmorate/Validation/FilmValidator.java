@@ -2,7 +2,7 @@ package ru.yandex.practicum.filmorate.Validation;
 
 import lombok.extern.slf4j.Slf4j;
 import ru.yandex.practicum.filmorate.Validation.Exception.ValidationException;
-import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Film.Film;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +37,14 @@ public class FilmValidator {
             String errorMsg = "Продолжительность фильма должна быть больше нуля";
             errors.add(errorMsg);
             log.warn("Ошибка валидации фильма ID={}: {}", film.getFilmId(), errorMsg);
+        }
+
+        if (film.getGenres() != null && film.getGenres().size() > 0) {
+            log.debug("Фильм имеет {} жанров", film.getGenres().size());
+        }
+
+        if (film.getRating() != null) {
+            log.debug("Фильм имеет рейтинг: {}", film.getRating().getCode());
         }
 
         if (!errors.isEmpty()) {

@@ -4,9 +4,12 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.model.Friend.FriendStatus;
+import ru.yandex.practicum.filmorate.model.User.User;
 import ru.yandex.practicum.filmorate.storage.User.UserStorage;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -19,8 +22,13 @@ public class UserService {
         this.userStorage = userStorage;
     }
 
-    public void addFriend(int userId, int friendId) {
-        log.debug("Добавление в друзья: пользователя {} и пользователя {}", userId, friendId);
+    public boolean isFriend(User user, int friendId) {
+        return user.getFriends().containsKey(friendId) &&
+                user.getFriends().get(friendId) == FriendStatus.ACCEPT;
+    }
+
+    public void sendFriendRequest(int userId, int friendId) {
+        log.debug("Отправка запроса на дружбу от {} к {}", userId, friendId);
 
         if (userId == friendId) {
             log.warn("Нельзя добавлять в друзья самого себя!");
@@ -30,14 +38,68 @@ public class UserService {
         User user = userStorage.getUserById(userId);
         User friend = userStorage.getUserById(friendId);
 
-        user.getFriends().add(friendId);
-        friend.getFriends().add(userId);
+        if (isFriend(user, friendId)) {
+            log.warn("Пользователи {} и {} уже друзья", userId, friendId);
+            throw new IllegalStateException("Пользователи уже друзья");
+        }
 
-        log.info("Пользователи {} и {} теперь друзья", userId, friendId);
+        if (user.getFriends().containsKey(friendId)) {
+            log.warn("Заявка в друзья уже отправлена пользователю {}", friendId);
+            throw new IllegalStateException("Заявка уже отправлена");
+        }
+
+        user.getFriends().put(friendId, FriendStatus.SEND);
+        friend.getFriends().put(userId, FriendStatus.SEND);
+
+        log.info("Запрос на добавление в друзья от пользователя {} к {}", userId, friendId, " отправлен");
+    }
+
+    public void passedFriend(int userId, int friendId) {
+        log.debug("Подтверждение заявки на дружбу: {} подтверждает заявку от {}", userId, friendId);
+
+        if (userId == friendId) {
+            log.warn("Нельзя подтвердить дружбу с самим собой");
+            throw new IllegalArgumentException("Нельзя подтвердить дружбу с самим собой");
+        }
+
+        User user = userStorage.getUserById(userId);
+        User friend = userStorage.getUserById(friendId);
+
+        if (!user.getFriends().containsKey(friendId)) {
+            log.warn("Нет входящей заявки от пользователя {} к пользователю {}", friendId, userId);
+            throw new IllegalStateException("Нет входящей заявки от этого пользователя");
+        }
+
+        if(user.getFriends().get(friendId) == FriendStatus.ACCEPT) {
+            log.warn("Заявка от {} к {} уже подтверждена", friendId, userId);
+            throw new IllegalStateException("Заявка уже подтверждена");
+        }
+
+        user.getFriends().put(friendId, FriendStatus.ACCEPT);
+        friend.getFriends().put(userId, FriendStatus.ACCEPT);
+
+        log.info("Пользователи {} и {}", userId, friendId, " теперь друзья");
+    }
+
+    public void rejectFriendRequest(int userId, int friendId) {
+        log.debug("Отклонение заявки на дружбу: {} отклоняет заявку от {}", userId, friendId);
+
+        User user = userStorage.getUserById(userId);
+        User friend = userStorage.getUserById(friendId);
+
+        if (!user.getFriends().containsKey(friendId)) {
+            log.warn("Нет входящей заявки от пользователя {} к пользователю {}", friendId, userId);
+            throw new IllegalStateException("Нет входящей заявки от этого пользователя");
+        }
+
+        user.getFriends().remove(friendId);
+        friend.getFriends().remove(userId);
+
+        log.info("Заявка на дружбу отклонена: {} отклонил заявку от {}", userId, friendId);
     }
 
     public void removeFriends(int userId, int friendId) {
-        log.debug("Удаление из друзей: пользователя {} и пользователя {}", userId, friendId);
+        log.debug("Удаление из друзей: у пользователя {} пользователя {}", userId, friendId);
 
         if (userId == friendId) {
             log.warn("Нельзя удалить из друзей самого себя!");
@@ -46,6 +108,11 @@ public class UserService {
 
         User user = userStorage.getUserById(userId);
         User friend = userStorage.getUserById(friendId);
+
+        if (!isFriend(user, friendId)) {
+            log.warn("Пользователи {} и {} не являются друзьями", userId, friendId);
+            throw new IllegalStateException("Пользователи не являетесь друзьями");
+        }
 
         user.getFriends().remove(friendId);
         friend.getFriends().remove(userId);
@@ -57,8 +124,19 @@ public class UserService {
         log.debug("Получение списка друзей пользователя {}", userId);
 
         User user = userStorage.getUserById(userId);
-        return user.getFriends().stream()
-                .map(id -> userStorage.getUserById(id))
+        return user.getFriends().entrySet().stream()
+                .filter(entry -> entry.getValue() == FriendStatus.ACCEPT)
+                .map(entry -> userStorage.getUserById(entry.getKey()))
+                .collect(Collectors.toList());
+    }
+
+    public List<User> getFriendRequests(int userId) {
+        log.debug("Получение входящих заявок в друзья для пользователя {}", userId);
+
+        User user = userStorage.getUserById(userId);
+        return user.getFriends().entrySet().stream()
+                .filter(entry -> entry.getValue() == FriendStatus.SEND)
+                .map(entry -> userStorage.getUserById(entry.getKey()))
                 .collect(Collectors.toList());
     }
 
@@ -68,9 +146,19 @@ public class UserService {
         User user = userStorage.getUserById(userId);
         User other = userStorage.getUserById(otherId);
 
-        return user.getFriends().stream()
-                .filter(other.getFriends()::contains)
-                .map(id -> userStorage.getUserById(id))
+        Set<Integer> userFriends = user.getFriends().entrySet().stream()
+                .filter(entry -> entry.getValue() == FriendStatus.ACCEPT)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toSet());
+
+        Set<Integer> otherFriend = other.getFriends().entrySet().stream()
+                .filter(entry -> entry.getValue() == FriendStatus.ACCEPT)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toSet());
+
+        return userFriends.stream()
+                .filter(otherFriend::contains)
+                .map(userStorage::getUserById)
                 .collect(Collectors.toList());
     }
 }

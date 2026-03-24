@@ -4,7 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.Validation.FilmValidator;
 import ru.yandex.practicum.filmorate.Validation.Exception.NotFoundException;
-import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Film.Film;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

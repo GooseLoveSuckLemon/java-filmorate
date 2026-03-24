@@ -5,11 +5,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Film.Film;
+import ru.yandex.practicum.filmorate.model.Genre.Genres;
+import ru.yandex.practicum.filmorate.model.Mpa.MpaRating;
 import ru.yandex.practicum.filmorate.service.FilmService;
 import ru.yandex.practicum.filmorate.storage.Film.FilmStorage;
 
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/films")
@@ -77,5 +80,19 @@ public class FilmController {
         log.info("Получение {} популярных фильмов", count);
         List<Film> popularFilms = filmService.getPopular(count);
         return ResponseEntity.ok(popularFilms);
+    }
+
+    @GetMapping("/{id}/genres")
+    public ResponseEntity<Set<Genres>> getFilmGenres(@PathVariable int id) {
+        log.info("Получение жанров фильма с ID: {}", id);
+        Film film = filmStorage.getFilmById(id);
+        return ResponseEntity.ok(film.getGenres());
+    }
+
+    @GetMapping("/{id}/mpa")
+    public ResponseEntity<MpaRating> getFilmMpa(@PathVariable int id) {
+        log.info("Получение рейтинга фильма с ID: {}", id);
+        Film film = filmStorage.getFilmById(id);
+        return ResponseEntity.ok(film.getRating());
     }
 }
