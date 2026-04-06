@@ -1,0 +1,76 @@
+// Таблица пользователей
+Table users {
+  user_id integer [primary key, unique, not null, increment]
+  email varchar(255) [not null, unique]
+  login varchar(255) [not null, unique]
+  name varchar(255)
+  birthday date
+}
+
+// Таблица статусов дружбы
+Table friendship_statuses {
+  status_id integer [primary key, unique, not null]
+  status_name varchar(50) [not null, unique]
+}
+
+// Таблица связей дружбы
+Table friendships {
+  user_id integer [primary key]
+  friend_id integer [primary key]
+  status_id integer [not null]
+  requested_at timestamp [default: `CURRENT_TIMESTAMP`]
+}
+
+// Таблица рейтингов MPA
+Table mpa_ratings {
+  mpa_id integer [primary key, unique, not null]
+  mpa_name varchar(10) [not null, unique]
+}
+
+// Таблица фильмов
+Table films {
+  film_id integer [primary key, unique, not null, increment]
+  name varchar(255) [not null]
+  description text
+  release_date date
+  duration integer [not null]
+  mpa_id integer
+}
+
+// Таблица жанров
+Table genres {
+  genre_id integer [primary key, unique, not null]
+  genre_name varchar(100) [not null, unique]
+}
+
+// Связующая таблица для жанров фильма
+Table film_genres {
+  film_id integer [primary key]
+  genre_id integer [primary key]
+}
+
+
+// Таблица лайков фильмов
+Table likes {
+  film_id integer [primary key]
+  user_id integer [primary key]
+  liked_at timestamp [default: `CURRENT_TIMESTAMP`]
+}
+
+// Связи  - каждая только один раз
+
+// Связи для таблицы friendships
+Ref: friendships.user_id > users.user_id
+Ref: friendships.friend_id > users.user_id
+Ref: friendships.status_id > friendship_statuses.status_id
+
+// Связь для таблицы films
+Ref: films.mpa_id > mpa_ratings.mpa_id
+
+// Связи для таблицы film_genres
+Ref: film_genres.film_id > films.film_id
+Ref: film_genres.genre_id > genres.genre_id
+
+// Связи для таблицы likes
+Ref: likes.film_id > films.film_id
+Ref: likes.user_id > users.user_id
