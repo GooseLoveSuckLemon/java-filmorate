@@ -7,7 +7,7 @@ Table users {
   birthday date
 }
 
-// Таблица статусов дружбы (справочная)
+// Таблица статусов дружбы
 Table friendship_statuses {
   status_id integer [primary key, unique, not null]
   status_name varchar(50) [not null, unique]
@@ -21,7 +21,7 @@ Table friendships {
   requested_at timestamp [default: `CURRENT_TIMESTAMP`]
 }
 
-// Таблица рейтингов MPA (справочная)
+// Таблица рейтингов MPA
 Table mpa_ratings {
   mpa_id integer [primary key, unique, not null]
   mpa_name varchar(10) [not null, unique]
