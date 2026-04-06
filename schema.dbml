@@ -1,6 +1,4 @@
-// =============================================
 // Таблица пользователей
-// =============================================
 Table users {
   user_id integer [primary key, unique, not null, increment]
   email varchar(255) [not null, unique]
@@ -9,17 +7,13 @@ Table users {
   birthday date
 }
 
-// =============================================
 // Таблица статусов дружбы (справочная)
-// =============================================
 Table friendship_statuses {
   status_id integer [primary key, unique, not null]
   status_name varchar(50) [not null, unique]
 }
 
-// =============================================
 // Таблица связей дружбы
-// =============================================
 Table friendships {
   user_id integer [primary key]
   friend_id integer [primary key]
@@ -27,17 +21,13 @@ Table friendships {
   requested_at timestamp [default: `CURRENT_TIMESTAMP`]
 }
 
-// =============================================
 // Таблица рейтингов MPA (справочная)
-// =============================================
 Table mpa_ratings {
   mpa_id integer [primary key, unique, not null]
   mpa_name varchar(10) [not null, unique]
 }
 
-// =============================================
 // Таблица фильмов
-// =============================================
 Table films {
   film_id integer [primary key, unique, not null, increment]
   name varchar(255) [not null]
@@ -47,34 +37,27 @@ Table films {
   mpa_id integer
 }
 
-// =============================================
-// Таблица жанров (справочная)
-// =============================================
+// Таблица жанров
 Table genres {
   genre_id integer [primary key, unique, not null]
   genre_name varchar(100) [not null, unique]
 }
 
-// =============================================
 // Связующая таблица для жанров фильма
-// =============================================
 Table film_genres {
   film_id integer [primary key]
   genre_id integer [primary key]
 }
 
-// =============================================
+
 // Таблица лайков фильмов
-// =============================================
 Table likes {
   film_id integer [primary key]
   user_id integer [primary key]
   liked_at timestamp [default: `CURRENT_TIMESTAMP`]
 }
 
-// =============================================
-// Связи (References) - каждая только один раз
-// =============================================
+// Связи  - каждая только один раз
 
 // Связи для таблицы friendships
 Ref: friendships.user_id > users.user_id
