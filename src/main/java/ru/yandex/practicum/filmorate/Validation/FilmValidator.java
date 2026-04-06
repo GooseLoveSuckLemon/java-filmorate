@@ -12,37 +12,37 @@ public class FilmValidator {
     private static final LocalDate MIN_RELEASE_DATE = LocalDate.of(1895, 12, 28);
 
     public void validateFilm(Film film) {
-        log.debug("Начало валидации фильма: ID={}, название='{}'", film.getFilmId(), film.getName());
+        log.debug("Начало валидации фильма: ID={}, название='{}'", film.getId(), film.getName());
         List<String> errors = new ArrayList<>();
 
         if (film.getName() == null || film.getName().isBlank()) {
             String errorMsg = "Название не может быть пустым";
             errors.add(errorMsg);
-            log.warn("Ошибка валидации фильма ID={}: {}", film.getFilmId(), errorMsg);
+            log.warn("Ошибка валидации фильма ID={}: {}", film.getId(), errorMsg);
         }
 
         if (film.getDescription() != null && film.getDescription().length() > 200) {
-            String errorMsg = "Превышена максимальная длина описания — 200 символов";
+            String errorMsg = "Максимальная длина описания — 200 символов";
             errors.add(errorMsg);
-            log.warn("Ошибка валидации фильма ID={}: {}", film.getFilmId(), errorMsg);
+            log.warn("Ошибка валидации фильма ID={}: {}", film.getId(), errorMsg);
         }
 
         if (film.getReleaseDate() != null && film.getReleaseDate().isBefore(MIN_RELEASE_DATE)) {
             String errorMsg = "Дата релиза не может быть раньше 28 декабря 1895 года";
             errors.add(errorMsg);
-            log.warn("Ошибка валидации фильма ID={}: {}", film.getFilmId(), errorMsg);
+            log.warn("Ошибка валидации фильма ID={}: {}", film.getId(), errorMsg);
         }
 
         if (film.getDuration() != null && film.getDuration() <= 0) {
-            String errorMsg = "Продолжительность фильма должна быть больше нуля";
+            String errorMsg = "Продолжительность фильма должна быть положительной";
             errors.add(errorMsg);
-            log.warn("Ошибка валидации фильма ID={}: {}", film.getFilmId(), errorMsg);
+            log.warn("Ошибка валидации фильма ID={}: {}", film.getId(), errorMsg);
         }
 
         if (!errors.isEmpty()) {
-            log.error("Валидация фильма ID={} не пройдена. Количество ошибок: {}", film.getFilmId(), errors.size());
+            log.error("Валидация фильма ID={} не пройдена. Количество ошибок: {}", film.getId(), errors.size());
             throw new ValidationException(errors);
         }
-        log.debug("Валидация фильма ID={} успешно завершена", film.getFilmId());
+        log.debug("Валидация фильма ID={} успешно завершена", film.getId());
     }
 }
