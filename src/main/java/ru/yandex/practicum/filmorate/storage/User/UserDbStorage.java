@@ -60,7 +60,7 @@ public class UserDbStorage implements UserStorage {
             throw new NotFoundException("Пользователь с ID " + user.getUserId() + " не найден");
         }
 
-        return getUserById(user.getUserId());
+        return user;
     }
 
     @Override
@@ -72,6 +72,7 @@ public class UserDbStorage implements UserStorage {
             throw new NotFoundException("Пользователь с ID " + userId + " не найден");
         }
 
+        log.info("Пользователь с ID {} успешно удален", userId);
         return getAllUsersMap();
     }
 
@@ -79,10 +80,32 @@ public class UserDbStorage implements UserStorage {
     public List<User> getAllUsers() {
         String sql = "SELECT * FROM users";
         List<User> users = jdbcTemplate.query(sql, new UserRowMapper());
-        for (User user : users) {
-            loadFriends(user);
+
+        if (users.isEmpty()) {
+            return users;
         }
+
+        Map<Integer, Set<Integer>> friendsMap = loadAllFriends();
+
+        for (User user : users) {
+            Set<Integer> friends = friendsMap.getOrDefault(user.getUserId(), new HashSet<>());
+            user.setFriends(friends);
+        }
+
         return users;
+    }
+
+    private Map<Integer, Set<Integer>> loadAllFriends() {
+        String sql = "SELECT user_id, friend_id FROM friends";
+        return jdbcTemplate.query(sql, rs -> {
+            Map<Integer, Set<Integer>> friendsMap = new HashMap<>();
+            while (rs.next()) {
+                int userId = rs.getInt("user_id");
+                int friendId = rs.getInt("friend_id");
+                friendsMap.computeIfAbsent(userId, k -> new HashSet<>()).add(friendId);
+            }
+            return friendsMap;
+        });
     }
 
     private Map<Integer, User> getAllUsersMap() {
@@ -136,20 +159,67 @@ public class UserDbStorage implements UserStorage {
                 "JOIN friends f ON u.user_id = f.friend_id " +
                 "WHERE f.user_id = ?";
         List<User> friends = jdbcTemplate.query(sql, new UserRowMapper(), userId);
-        for (User friend : friends) {
-            loadFriends(friend);
+        if (friends.isEmpty()) {
+            return friends;
         }
+
+        Set<Integer> friendIds = new HashSet<>();
+        for (User friend : friends) {
+            friendIds.add(friend.getUserId());
+        }
+
+        Map<Integer, Set<Integer>> friendsMap = loadFriendsForUsers(friendIds);
+
+        for (User friend : friends) {
+            Set<Integer> friendOfFriends = friendsMap.getOrDefault(friend.getUserId(), new HashSet<>());
+            friend.setFriends(friendOfFriends);
+        }
+
         return friends;
     }
+
+    private Map<Integer, Set<Integer>> loadFriendsForUsers(Collection<Integer> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return new HashMap<>();
+        }
+
+        String sql = "SELECT user_id, friend_id FROM friends WHERE user_id IN (" +
+                String.join(",", Collections.nCopies(userIds.size(), "?")) + ")";
+
+        return jdbcTemplate.query(sql, userIds.toArray(), rs -> {
+            Map<Integer, Set<Integer>> friendsMap = new HashMap<>();
+            while (rs.next()) {
+                int userId = rs.getInt("user_id");
+                int friendId = rs.getInt("friend_id");
+                friendsMap.computeIfAbsent(userId, k -> new HashSet<>()).add(friendId);
+            }
+            return friendsMap;
+        });
+    }
+
 
     public List<User> getCommonFriends(int userId, int otherId) {
         String sql = "SELECT u.* FROM users u " +
                 "WHERE u.user_id IN (SELECT f1.friend_id FROM friends f1 WHERE f1.user_id = ?) " +
                 "AND u.user_id IN (SELECT f2.friend_id FROM friends f2 WHERE f2.user_id = ?)";
         List<User> commonFriends = jdbcTemplate.query(sql, new UserRowMapper(), userId, otherId);
-        for (User friend : commonFriends) {
-            loadFriends(friend);
+
+        if (commonFriends.isEmpty()) {
+            return commonFriends;
         }
+
+        Set<Integer> commonFriendIds = new HashSet<>();
+        for (User friend : commonFriends) {
+            commonFriendIds.add(friend.getUserId());
+        }
+
+        Map<Integer, Set<Integer>> friendsMap = loadFriendsForUsers(commonFriendIds);
+
+        for (User friend : commonFriends) {
+            Set<Integer> friendOfFriends = friendsMap.getOrDefault(friend.getUserId(), new HashSet<>());
+            friend.setFriends(friendOfFriends);
+        }
+
         return commonFriends;
     }
 
