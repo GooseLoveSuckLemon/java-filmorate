@@ -2,9 +2,11 @@ package ru.yandex.practicum.filmorate.controller;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.Validation.FilmValidator;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
 import ru.yandex.practicum.filmorate.storage.Film.FilmStorage;
@@ -14,7 +16,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/films")
 @Slf4j
-
+@Validated
 public class FilmController {
     private final FilmStorage filmStorage;
     private final FilmService filmService;
@@ -26,17 +28,33 @@ public class FilmController {
     }
 
     @PostMapping
-    public ResponseEntity<Film> addFilm(@Validated @RequestBody Film film) {
+    public ResponseEntity<Film> addFilm(@RequestBody Film film) {
         log.info("Добавление фильма: {}", film.getName());
+
+        FilmValidator validator = new FilmValidator();
+        validator.validateFilm(film);
+
         Film savedFilm = filmStorage.addFilm(film);
         log.info("Фильм '{}' успешно добавлен, ID: {}", film.getName(), savedFilm.getFilmId());
-        return ResponseEntity.status(201).body(savedFilm);
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedFilm);
+    }
+
+    @PutMapping
+    public ResponseEntity<Film> updateFilm(@RequestBody Film film) {
+        log.info("Обновление фильма с ID: {}", film.getId());
+
+        FilmValidator validator = new FilmValidator();
+        validator.validateFilm(film);
+
+        Film updateFilm = filmStorage.updateFilm(film);
+        log.info("Фильм с ID {} успешно обновлён", film.getId());
+        return ResponseEntity.ok(updateFilm);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Film> updateFilm(@PathVariable int id, @Validated @RequestBody Film film) {
+    public ResponseEntity<Film> updateFilmById(@PathVariable int id, @Validated @RequestBody Film film) {
         log.info("Обновление фильма с ID: {}", id);
-        film.setFilmId(id);
+        film.setId(id);
         Film updateFilm = filmStorage.updateFilm(film);
         log.info("Фильм с ID {} успешно обновлён", id);
         return ResponseEntity.ok(updateFilm);
@@ -51,15 +69,15 @@ public class FilmController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Film> getFilmId(@PathVariable int id) {
+    public ResponseEntity<Film> getFilmById(@PathVariable int id) {
         log.info("Получение фильма с ID: {}", id);
         Film film = filmStorage.getFilmById(id);
-        log.debug("получено {} фильмов", film);
+        log.debug("Фильм с ID {} найден", id);
         return ResponseEntity.ok(film);
     }
 
     @PutMapping("/{id}/like/{userId}")
-    public ResponseEntity<Void> addLke(@PathVariable int id, @PathVariable int userId) {
+    public ResponseEntity<Void> addLike(@PathVariable int id, @PathVariable int userId) {
         log.info("Добавление лайка пользователя {} к фильму {}", userId, id);
         filmService.addLike(id, userId);
         return ResponseEntity.ok().build();

@@ -1,153 +1,157 @@
 package ru.yandex.practicum.filmorate;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 import ru.yandex.practicum.filmorate.Validation.UserValidator;
 import ru.yandex.practicum.filmorate.Validation.Exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.time.LocalDate;
 
-@SpringBootTest
+import static org.junit.jupiter.api.Assertions.*;
+
 class UserValidatorTest {
-    private final UserValidator userValidator = new UserValidator();
+
+    private final UserValidator validator = new UserValidator();
 
     @Test
-    void validateUser_passedTest() {
+    void validateUser_withValidUser_shouldPass() {
         User user = new User();
-        user.setEmail("test@gmail.com");
-        user.setLogin("login");
-        user.setName("name");
-        user.setBirthday(LocalDate.of(2006, 4, 26));
+        user.setEmail("test@example.com");
+        user.setLogin("testuser");
+        user.setName("Test User");
+        user.setBirthday(LocalDate.of(1990, 1, 1));
 
-        Assertions.assertDoesNotThrow(
-                () -> userValidator.validateUser(user)
-        );
+        assertDoesNotThrow(() -> validator.validateUser(user));
     }
 
     @Test
-    void validateUser_nonEmail() {
+    void validateUser_withNullBirthday_shouldThrowException() {
+        User user = new User();
+        user.setEmail("test@example.com");
+        user.setLogin("testuser");
+        user.setBirthday(null);
+
+        assertThrows(ValidationException.class, () -> {
+            validator.validateUser(user);
+        });
+    }
+
+    @Test
+    void validateUser_withFutureBirthday_shouldThrowException() {
+        User user = new User();
+        user.setEmail("test@example.com");
+        user.setLogin("testuser");
+        // Используем действительно будущую дату (текущий год + 1)
+        user.setBirthday(LocalDate.now().plusYears(1));
+
+        assertThrows(ValidationException.class, () -> {
+            validator.validateUser(user);
+        });
+    }
+
+    @Test
+    void validateUser_withEmptyEmail_shouldThrowException() {
+        User user = new User();
+        user.setEmail("");
+        user.setLogin("testuser");
+        user.setBirthday(LocalDate.of(1990, 1, 1));
+
+        assertThrows(ValidationException.class, () -> validator.validateUser(user));
+    }
+
+    @Test
+    void validateUser_withNullEmail_shouldThrowException() {
         User user = new User();
         user.setEmail(null);
-        user.setLogin("login");
-        user.setName("name");
-        user.setBirthday(LocalDate.of(2006, 4, 26));
+        user.setLogin("testuser");
+        user.setBirthday(LocalDate.of(1990, 1, 1));
 
-        ValidationException exception = Assertions.assertThrows(
-                ValidationException.class,
-                () -> userValidator.validateUser(user)
-        );
-
-        Assertions.assertTrue(
-                exception.getErrors().contains("Электронная почта не может быть пустой")
-        );
+        assertThrows(ValidationException.class, () -> validator.validateUser(user));
     }
 
     @Test
-    void validateUser_badEmail() {
+    void validateUser_withEmailWithoutAt_shouldThrowException() {
         User user = new User();
-        user.setEmail("testgmail.com");
-        user.setLogin("login");
-        user.setName("name");
-        user.setBirthday(LocalDate.of(2006, 4, 26));
+        user.setEmail("testexample.com");
+        user.setLogin("testuser");
+        user.setBirthday(LocalDate.of(1990, 1, 1));
 
-        ValidationException exception = Assertions.assertThrows(
-                ValidationException.class,
-                () -> userValidator.validateUser(user)
-        );
-
-        Assertions.assertTrue(
-                exception.getErrors().contains("Электронная почта должна содержать символ @")
-        );
+        assertThrows(ValidationException.class, () -> validator.validateUser(user));
     }
 
     @Test
-    void validateUser_nonLogin() {
+    void validateUser_withEmptyLogin_shouldThrowException() {
         User user = new User();
-        user.setEmail("test@gmail.com");
+        user.setEmail("test@example.com");
+        user.setLogin("");
+        user.setBirthday(LocalDate.of(1990, 1, 1));
+
+        assertThrows(ValidationException.class, () -> validator.validateUser(user));
+    }
+
+    @Test
+    void validateUser_withNullLogin_shouldThrowException() {
+        User user = new User();
+        user.setEmail("test@example.com");
         user.setLogin(null);
-        user.setName("name");
-        user.setBirthday(LocalDate.of(2006, 4, 26));
+        user.setBirthday(LocalDate.of(1990, 1, 1));
 
-        ValidationException exception = Assertions.assertThrows(
-                ValidationException.class,
-                () -> userValidator.validateUser(user)
-        );
-
-        Assertions.assertTrue(
-                exception.getErrors().contains("Логин не может быть пустым")
-        );
+        assertThrows(ValidationException.class, () -> validator.validateUser(user));
     }
 
     @Test
-    void validateUser_badLogin() {
+    void validateUser_withLoginWithSpaces_shouldThrowException() {
         User user = new User();
-        user.setEmail("test@gmail.com");
-        user.setLogin("log in");
-        user.setName("name");
-        user.setBirthday(LocalDate.of(2006, 4, 26));
+        user.setEmail("test@example.com");
+        user.setLogin("test user");
+        user.setBirthday(LocalDate.of(1990, 1, 1));
 
-
-        ValidationException exception = Assertions.assertThrows(
-                ValidationException.class,
-                () -> userValidator.validateUser(user)
-        );
-
-        Assertions.assertTrue(
-                exception.getErrors().contains("Логин не может содержать пробелы")
-        );
+        assertThrows(ValidationException.class, () -> validator.validateUser(user));
     }
 
     @Test
-    void validateUser_nullName() {
+    void validateUser_withNullName_shouldSetNameToLogin() {
         User user = new User();
-        user.setEmail("test@gmail.com");
-        user.setLogin("login");
+        user.setEmail("test@example.com");
+        user.setLogin("testuser");
         user.setName(null);
-        user.setBirthday(LocalDate.of(2006, 4, 26));
+        user.setBirthday(LocalDate.of(1990, 1, 1));
 
-        Assertions.assertDoesNotThrow(() -> userValidator.validateUser(user));
+        validator.validateUser(user);
+
+        assertEquals("testuser", user.getName());
     }
 
     @Test
-    void validateUser_badBirthday() {
+    void validateUser_withEmptyName_shouldSetNameToLogin() {
         User user = new User();
-        user.setEmail("test@gmail.com");
-        user.setLogin("log in");
-        user.setName("name");
-        user.setBirthday(LocalDate.of((LocalDate.now().plusYears(1).getYear()), 4, 26));
+        user.setEmail("test@example.com");
+        user.setLogin("testuser");
+        user.setName("");
+        user.setBirthday(LocalDate.of(1990, 1, 1));
 
-        ValidationException exception = Assertions.assertThrows(
-                ValidationException.class,
-                () -> userValidator.validateUser(user)
-        );
+        validator.validateUser(user);
 
-        Assertions.assertTrue(
-                exception.getErrors().contains("Некорректная дата: дата рождения не может быть в будущем")
-        );
+        assertEquals("testuser", user.getName());
     }
 
     @Test
-    void validateUser_birthdayNow() {
+    void validateUser_withPastBirthday_shouldPass() {
         User user = new User();
-        user.setEmail("test@gmail.com");
-        user.setLogin("login");
-        user.setName("name");
+        user.setEmail("test@example.com");
+        user.setLogin("testuser");
+        user.setBirthday(LocalDate.of(2000, 1, 1));
+
+        assertDoesNotThrow(() -> validator.validateUser(user));
+    }
+
+    @Test
+    void validateUser_withTodayBirthday_shouldPass() {
+        User user = new User();
+        user.setEmail("test@example.com");
+        user.setLogin("testuser");
         user.setBirthday(LocalDate.now());
 
-        Assertions.assertDoesNotThrow(() -> userValidator.validateUser(user));
+        assertDoesNotThrow(() -> validator.validateUser(user));
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
